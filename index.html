@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Viewer</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #particle-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .container {
+            position: relative;
+            z-index: 2;
+        }
+        .container {
+            background: #fff;
+            padding: 2.5rem 2rem 2rem 2rem;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+        }
+        #title {
+            color: #5a189a;
+            margin-bottom: 1.5rem;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #c7c7c7;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: #764ba2;
+        }
+        button {
+            padding: 0.5rem 1.2rem;
+            background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            margin-bottom: 1rem;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+        #profile {
+            margin-top: 1.5rem;
+        }
+        .profile-card {
+            background: #f3f0ff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .profile-card img {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px solid #764ba2;
+            margin-bottom: 0.5rem;
+        }
+        .profile-card h2 {
+            margin: 0.3rem 0 0.2rem 0;
+            color: #3a0ca3;
+        }
+        .profile-card p {
+            margin: 0.2rem 0;
+            color: #333;
+            font-size: 1rem;
+        }
+        .profile-card a {
+            margin-top: 0.5rem;
+            color: #fff;
+            background: #5a189a;
+            padding: 0.45rem 1.1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .profile-card a:hover {
+            background: #764ba2;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem 0.5rem;
+                max-width: 98vw;
+            }
+            .profile-card img {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-bg"></canvas>
+    <div class="container">
+        <h1 id="title">GitHub Profile Viewer</h1>
+<input type="text" id="username" placeholder="Enter a GitHub username"/>
+<button onclick="fetchProfile()">GetProfile</button>
+<div id="profile">
+
+</div>
+    </div>
+    <script>
+        function fetchProfile() {
+            const username = document.getElementById('username').value;
+            if(!username){
+                alert('Please enter a Github username')
+                return
+
+            }
+            fetch(`https://api.github.com/users/${username}`)
+            .then(response => {
+                if(!response.ok) {
+                    throw new Error('Network response was not ok')
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayProfile(data)
+        })
+        .catch(err => {
+            console.error('There was a problem with the fetch operation:', err)
+
+        })
+    }
+    function displayProfile(profileData){
+        const profileElement = document.getElementById('profile')
+        profileElement.innerHTML = `
+            <div class="profile-card">
+                <img src="${profileData.avatar_url}" alt="${profileData.login}'s avatar" />
+                <h2>${profileData.name ? profileData.name : profileData.login}</h2>
+                <p>@${profileData.login}</p>
+                <p>${profileData.bio ? profileData.bio : ''}</p>
+                <p><b>Followers:</b> ${profileData.followers} &nbsp; <b>Following:</b> ${profileData.following}</p>
+                <a href="${profileData.html_url}" target="_blank">Visit GitHub Profile</a>
+            </div>
+        `
+    }
+        // --- Particle Background ---
+        const canvas = document.getElementById('particle-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 70;
+        const colors = ['#fff', '#a685e2', '#5a189a', '#764ba2', '#b8c0ff'];
+        let mouse = { x: window.innerWidth/2, y: window.innerHeight/2 };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function randomBetween(a, b) {
+            return a + Math.random() * (b - a);
+        }
+
+        class Particle {
+            constructor() {
+                this.radius = randomBetween(2, 4);
+                this.x = randomBetween(0, canvas.width);
+                this.y = randomBetween(0, canvas.height);
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.angle = Math.random() * 2 * Math.PI;
+                this.speed = randomBetween(0.5, 1.5);
+                this.orbit = randomBetween(50, 160);
+            }
+            update() {
+                // Move slightly towards mouse
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                this.x += dx * 0.008 + Math.cos(this.angle) * this.speed;
+                this.y += dy * 0.008 + Math.sin(this.angle) * this.speed;
+                this.angle += randomBetween(-0.02, 0.02);
+                // Wrap around
+                if(this.x < 0) this.x = canvas.width;
+                if(this.x > canvas.width) this.x = 0;
+                if(this.y < 0) this.y = canvas.height;
+                if(this.y > canvas.height) this.y = 0;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = 0.7;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+        function initParticles() {
+            particles = [];
+            for(let i=0;i<particleCount;i++) {
+                particles.push(new Particle());
+            }
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let p of particles) {
+                p.update();
+                p.draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        window.addEventListener('touchmove', e => {
+            if(e.touches && e.touches.length > 0) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        });
+        initParticles();
+        animateParticles();
+        // --- End Particle Background ---
+    </script>
+</body>
+</html>
